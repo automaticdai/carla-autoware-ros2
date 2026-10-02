@@ -46,18 +46,25 @@ WORKDIR /carla
 
 # No --toolchain: CMake/LinuxToolchain.cmake requires the UE5 clang sysroot.
 # Client-only, so the server, UE project, examples and tests are all off.
-RUN cmake -G Ninja -S . -B Build \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_COMPILER=gcc-12 \
-        -DCMAKE_CXX_COMPILER=g++-12 \
-        -DBUILD_CARLA_UNREAL=OFF \
-        -DBUILD_CARLA_SERVER=OFF \
-        -DBUILD_CARLA_CLIENT=ON \
-        -DBUILD_PYTHON_API=ON \
-        -DBUILD_EXAMPLES=OFF \
-        -DBUILD_LIBCARLA_TESTS=OFF \
-        -DENABLE_ROS2=OFF \
-        -DPython3_EXECUTABLE=/venv/bin/python \
+# Configure fetches every dependency from GitHub and one dropped transfer
+# fails it, so retry like CarlaSetup.sh does (finished downloads are reused).
+RUN for attempt in 1 2 3 4 5; do \
+        cmake -G Ninja -S . -B Build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc-12 \
+            -DCMAKE_CXX_COMPILER=g++-12 \
+            -DBUILD_CARLA_UNREAL=OFF \
+            -DBUILD_CARLA_SERVER=OFF \
+            -DBUILD_CARLA_CLIENT=ON \
+            -DBUILD_PYTHON_API=ON \
+            -DBUILD_EXAMPLES=OFF \
+            -DBUILD_LIBCARLA_TESTS=OFF \
+            -DENABLE_ROS2=OFF \
+            -DPython3_EXECUTABLE=/venv/bin/python \
+        && break; \
+        [ "$attempt" = 5 ] && exit 1; \
+        echo "configure failed (attempt $attempt), retrying in 30 s"; sleep 30; \
+    done \
     && cmake --build Build --target carla-python-api
 
 # Fail the build here rather than at runtime if the module does not import.

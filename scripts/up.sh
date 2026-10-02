@@ -7,8 +7,9 @@
 #   scripts/up.sh --headless up --build carla bridge
 #                                      # no renderer/GPU (docker/compose.headless.yaml)
 #
-# Requires the client wheel in ./dist (scripts/build_client_wheel.sh) and the map
-# under $AUTOWARE_DATA/maps/autoware_maps (scripts/fetch_maps.sh).
+# Requires the client wheel in ./dist (scripts/build_client_wheel.sh), the map
+# under $AUTOWARE_DATA/maps/autoware_maps (scripts/fetch_maps.sh) and the host
+# DDS settings (scripts/host_setup.sh).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,4 +29,15 @@ if [[ "${1:-}" == "--headless" ]]; then
 fi
 
 [[ $# -eq 0 ]] && set -- up --build
+
+# Autoware's CycloneDDS config needs a 10 MB receive buffer on the host kernel;
+# check before starting anything rather than let every ROS node crash.
+if [[ " $* " =~ \ (up|run|start|restart)\  ]]; then
+    rmem_max="$(cat /proc/sys/net/core/rmem_max)"
+    if (( rmem_max < 10485760 )); then
+        echo "error: net.core.rmem_max is ${rmem_max}; DDS needs >= 10485760." >&2
+        echo "       run scripts/host_setup.sh (add --persist to keep it across reboots)" >&2
+        exit 1
+    fi
+fi
 exec docker compose --env-file "${ROOT}/versions.env" "${files[@]}" "$@"

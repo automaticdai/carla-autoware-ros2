@@ -1,4 +1,4 @@
-# carla-autoware-hil
+# carla-autoware-ros2
 
 Run [Autoware](https://github.com/autowarefoundation/autoware) (ROS 2 Humble) against
 [CARLA](https://github.com/carla-simulator/carla) **0.10 (Unreal Engine 5)**.
@@ -34,6 +34,7 @@ found and how each one is handled.
 ## Quick start
 
 ```bash
+scripts/host_setup.sh --persist   # host DDS buffer sizes (sudo), required by Autoware
 scripts/build_client_wheel.sh     # -> dist/carla-0.10.0-cp310-cp310-linux_x86_64.whl
 scripts/fetch_maps.sh             # -> ~/autoware_data/maps/autoware_maps/Town10HD_Opt
 xhost +local:docker

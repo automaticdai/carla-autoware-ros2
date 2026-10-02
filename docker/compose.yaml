@@ -64,6 +64,7 @@ services:
   bridge:
     <<: *bridge-image
     network_mode: host
+    cap_add: [NET_ADMIN]  # base entrypoint applies DDS network tuning
     depends_on:
       carla:
         condition: service_healthy
@@ -123,6 +124,7 @@ services:
     <<: *bridge-image
     profiles: [spectator]
     network_mode: host
+    cap_add: [NET_ADMIN]
     restart: on-failure:5
     depends_on:
       bridge:
