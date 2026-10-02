@@ -1,0 +1,41 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell scripts
+        run: shellcheck -x scripts/*.sh docker/*.sh
+
+      - name: Python tools compile
+        run: python3 -m py_compile tools/*.py
+
+      - name: Launch and package XML are well-formed
+        run: |
+          for f in ros/carla_autoware_ue5/package.xml ros/carla_autoware_ue5/launch/*.xml; do
+            python3 -c "import sys, xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])" "$f"
+          done
+
+      - name: Calibration maps are monotonic in pedal
+        run: |
+          python3 - <<'PY'
+          import csv
+          for name, sign in (("accel_map", 1), ("brake_map", -1)):
+              rows = list(csv.reader(open(f"ros/carla_autoware_ue5/calibration/{name}.csv")))[1:]
+              vals = [[float(x) for x in r[1:]] for r in rows]
+              for a, b in zip(vals, vals[1:]):
+                  assert all(sign * (y - x) >= 0 for x, y in zip(a, b)), f"{name} not monotonic"
+          print("ok")
+          PY
+
+      - name: Compose files resolve
+        run: |
+          mkdir -p dist && touch dist/carla-0.0.0-cp310-cp310-linux_x86_64.whl
+          scripts/up.sh config --quiet
+          scripts/up.sh --headless config --quiet

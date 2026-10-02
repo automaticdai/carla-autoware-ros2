@@ -1,0 +1,132 @@
+# CARLA 0.10 (UE5) + Autoware. Run through scripts/up.sh, which passes
+# versions.env as the env file; every ${VAR} below is pinned there.
+#
+# Services:
+#   carla      - simulator server on localhost:2000
+#   bridge     - autoware_carla_interface (0.10 preset), healthy once the ego exists
+#   autoware   - e2e_simulator with simulator_type:=carla, bridge launched separately
+#   spectator  - optional chase camera (profile "spectator")
+#
+# docker/compose.headless.yaml runs CARLA without a renderer or GPU (-nullrhi);
+# see that file for what still works.
+#
+# All services use host networking: the bridge reaches CARLA on localhost and
+# DDS discovery between bridge and Autoware needs a shared network namespace.
+
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+x-bridge-image: &bridge-image
+  image: ${BRIDGE_IMAGE:?run via scripts/up.sh}
+  build:
+    context: ..
+    dockerfile: docker/bridge.Dockerfile
+    args:
+      AUTOWARE_IMAGE: ${AUTOWARE_IMAGE}
+      AUTOWARE_UNIVERSE_URL: ${AUTOWARE_UNIVERSE_URL}
+      AUTOWARE_UNIVERSE_REF: ${AUTOWARE_UNIVERSE_REF}
+
+x-ros-env: &ros-env
+  HOST_UID: ${HOST_UID:-1000}
+  HOST_GID: ${HOST_GID:-1000}
+  ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+
+services:
+  carla:
+    <<: *gpu
+    image: ${CARLA_IMAGE}
+    network_mode: host
+    environment:
+      DISPLAY: ${DISPLAY:-}
+      SDL_AUDIODRIVER: dummy
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command:
+      - bash
+      - CarlaUnreal.sh
+      - -nosound
+      - -quality-level=${CARLA_QUALITY:-Low}
+      - ${CARLA_RENDER_FLAG:--RenderOffScreen}
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/2000'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  bridge:
+    <<: *bridge-image
+    network_mode: host
+    depends_on:
+      carla:
+        condition: service_healthy
+    environment:
+      <<: *ros-env
+    volumes:
+      - ${AUTOWARE_DATA:-${HOME}/autoware_data}:/home/aw/autoware_data:ro
+    command:
+      - ros2
+      - launch
+      - carla_autoware_ue5
+      - bridge.launch.xml
+      - map_path:=/home/aw/autoware_data/maps/autoware_maps/${CARLA_WORLD}
+      - vehicle_type:=${EGO_VEHICLE}
+      - no_rendering_mode:=${CARLA_NO_RENDERING:-false}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python3 -c "import sys, carla;
+          c = carla.Client('localhost', 2000); c.set_timeout(5.0);
+          sys.exit(0 if any(a.attributes.get('role_name') == 'ego_vehicle'
+          for a in c.get_world().get_actors().filter('vehicle.*')) else 1)"
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+
+  autoware:
+    <<: [*gpu, *bridge-image]
+    network_mode: host
+    privileged: true
+    depends_on:
+      bridge:
+        condition: service_healthy
+    environment:
+      <<: *ros-env
+      DISPLAY: ${DISPLAY:-}
+      QT_X11_NO_MITSHM: "1"
+      NVIDIA_DRIVER_CAPABILITIES: all
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${AUTOWARE_DATA:-${HOME}/autoware_data}:/home/aw/autoware_data
+    command:
+      - ros2
+      - launch
+      - autoware_launch
+      - e2e_simulator.launch.xml
+      - vehicle_model:=sample_vehicle
+      - sensor_model:=carla_sensor_kit
+      - simulator_type:=carla
+      - launch_simulator_interface:=false
+      - map_path:=/home/aw/autoware_data/maps/autoware_maps/${CARLA_WORLD}
+      - data_path:=/home/aw/autoware_data
+
+  spectator:
+    <<: *bridge-image
+    profiles: [spectator]
+    network_mode: host
+    restart: on-failure:5
+    depends_on:
+      bridge:
+        condition: service_healthy
+    environment:
+      <<: *ros-env
+    command: [ros2, run, autoware_carla_interface, spectator_follow, --role, ego_vehicle]

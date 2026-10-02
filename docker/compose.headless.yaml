@@ -1,0 +1,15 @@
+# Override: CARLA without a renderer (-nullrhi) and without a GPU reservation.
+#
+#   scripts/up.sh --headless up --build carla bridge
+#
+# (--headless adds this file and sets CARLA_NO_RENDERING=true, which the bridge
+# command in compose.yaml reads at interpolation time.)
+#
+# For machines with no NVIDIA container runtime (CI, WSL2 without the toolkit).
+# Physics, LiDAR, IMU, GNSS and vehicle status all work; cameras are not
+# spawned (the bridge's no_rendering_mode), so camera-based perception and
+# traffic-light recognition are unavailable.
+services:
+  carla:
+    deploy: !reset {}
+    command: [bash, CarlaUnreal.sh, -nosound, -nullrhi]

@@ -1,0 +1,48 @@
+<launch>
+  <!--
+    autoware_carla_interface with the defaults CARLA 0.10 (UE5) needs.
+    Every argument can still be overridden from the command line; anything not
+    listed here keeps the upstream default.
+  -->
+  <arg name="host" default="localhost"/>
+  <arg name="port" default="2000"/>
+  <arg name="timeout" default="60"/>
+  <arg name="map_path" description="Autoware map directory; its basename is the CARLA world to load (e.g. .../Town10HD_Opt)"/>
+
+  <!-- vehicle.toyota.prius (upstream default) is not in the 0.10 catalogue.
+       The MKZ wheelbase (2.85 m) matches the bridge's default vehicle_config. -->
+  <arg name="vehicle_type" default="vehicle.lincoln.mkz"/>
+  <arg name="spawn_point" default="None"/>
+  <arg name="use_light_weight_sensor_mapping" default="true"/>
+  <arg name="no_rendering_mode" default="false"/>
+  <arg name="use_e2e_planning" default="false"/>
+
+  <!-- UE5/Chaos puts a stationary body to sleep, and throttle alone does not wake it. -->
+  <arg name="wake_sleeping_physics" default="true"/>
+  <!-- 0.10 towns do not put map-frame z on the road surface. -->
+  <arg name="spawn_point_ground_snap" default="true"/>
+  <!-- Below 0.2 throttle the MKZ does not pull away from rest (measured by
+       tools/calibrate_pedal_map.py), so a small creep command would stall. -->
+  <arg name="min_positive_throttle" default="0.2"/>
+  <!-- The 0.10 MKZ speed->steer curve has out-of-order points (tools/smoke_test.py reports it). -->
+  <arg name="flatten_steering_curve" default="true"/>
+
+  <arg name="raw_vehicle_cmd_converter_config" default="$(find-pkg-share carla_autoware_ue5)/config/raw_vehicle_cmd_converter.param.yaml"/>
+
+  <include file="$(find-pkg-share autoware_carla_interface)/launch/autoware_carla_interface.launch.xml">
+    <arg name="host" value="$(var host)"/>
+    <arg name="port" value="$(var port)"/>
+    <arg name="timeout" value="$(var timeout)"/>
+    <arg name="map_path" value="$(var map_path)"/>
+    <arg name="vehicle_type" value="$(var vehicle_type)"/>
+    <arg name="spawn_point" value="$(var spawn_point)"/>
+    <arg name="use_light_weight_sensor_mapping" value="$(var use_light_weight_sensor_mapping)"/>
+    <arg name="no_rendering_mode" value="$(var no_rendering_mode)"/>
+    <arg name="use_e2e_planning" value="$(var use_e2e_planning)"/>
+    <arg name="wake_sleeping_physics" value="$(var wake_sleeping_physics)"/>
+    <arg name="spawn_point_ground_snap" value="$(var spawn_point_ground_snap)"/>
+    <arg name="min_positive_throttle" value="$(var min_positive_throttle)"/>
+    <arg name="flatten_steering_curve" value="$(var flatten_steering_curve)"/>
+    <arg name="raw_vehicle_cmd_converter_config" value="$(var raw_vehicle_cmd_converter_config)"/>
+  </include>
+</launch>
