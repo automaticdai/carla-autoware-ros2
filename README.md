@@ -17,7 +17,8 @@ missing glue. It does not fork CARLA or the bridge: it pins them and adds:
 | [`ros/carla_autoware_ue5`](ros/carla_autoware_ue5) | ROS 2 package: `bridge.launch.xml` with the 0.10 settings, plus pedal maps measured for `vehicle.lincoln.mkz` on 0.10 |
 | [`scripts/fetch_maps.sh`](scripts/fetch_maps.sh) | Downloads Autoware maps recorded *from* CARLA 0.10 (checksum-verified) |
 | [`docker/compose.yaml`](docker/compose.yaml) | CARLA server, bridge, Autoware and an optional chase camera |
-| [`tools/`](tools) | `smoke_test.py` (can the server be driven?) and `calibrate_pedal_map.py` (regenerates the pedal maps) |
+| [`tools/`](tools) | `smoke_test.py` (can the server be driven?), `calibrate_pedal_map.py` (regenerates the pedal maps), and `autoware/` (perception stub and closed-loop drive test for headless runs) |
+| [`scripts/drive_test.sh`](scripts/drive_test.sh) | One-command end-to-end check without a GPU: Autoware drives to a goal in CARLA and must arrive |
 
 [docs/compatibility.md](docs/compatibility.md) lists every CARLA 0.10 difference
 found and how each one is handled.
@@ -48,12 +49,25 @@ Options:
 
 ```bash
 scripts/up.sh --profile spectator up       # spectator camera follows the ego
-scripts/up.sh --headless up --build carla bridge
-                                           # no renderer / no GPU: physics, LiDAR,
-                                           # IMU, GNSS only (CI, WSL2 without toolkit)
+scripts/up.sh --headless up --build      # no renderer / no GPU (CI, WSL2 without
+                                           # toolkit): no cameras, perception stubbed out
 CARLA_RENDER_FLAG=-windowed scripts/up.sh  # show the CARLA window (default is off-screen)
 scripts/up.sh down
 ```
+
+## End-to-end check without a GPU
+
+```bash
+scripts/drive_test.sh                      # exit 0 when Autoware arrives at the goal
+KEEP_RUNNING=1 scripts/drive_test.sh --distance 120
+```
+
+This starts the headless stack, spawns the ego on a straight lane, initializes
+localization, sets a goal ahead through the AD API, engages, and waits for
+`ARRIVED`. Localization (NDT on the 0.10 point cloud), planning, control, the
+pedal maps and the bridge are all exercised. Perception is replaced by
+`tools/autoware/perception_stub.py`, an empty world, so this checks the
+integration, not driving among traffic.
 
 ## Without Docker
 
@@ -89,7 +103,9 @@ It also prints the `min_positive_throttle` to use in `bridge.launch.xml`.
 Edit `versions.env`, then rebuild: `scripts/build_client_wheel.sh && scripts/up.sh build`.
 The client wheel must come from the same CARLA tag as the server. For Autoware
 Jazzy, set `AUTOWARE_IMAGE=...:universe-cuda-jazzy`, `CLIENT_PYTHON_TAG=cp312`
-and `CLIENT_BUILD_BASE=ubuntu:24.04`; the wheel is then built from source.
+and `CLIENT_BUILD_BASE=ubuntu:24.04`; the wheel is then built from source
+(verified to import on Ubuntu 24.04 and connect to the 0.10.0 server; the Jazzy
+bridge image itself is untested).
 
 ## History
 

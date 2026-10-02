@@ -1,15 +1,45 @@
-# Override: CARLA without a renderer (-nullrhi) and without a GPU reservation.
+# Override: no renderer (-nullrhi) and no GPU reservation anywhere.
 #
-#   scripts/up.sh --headless up --build carla bridge
+#   scripts/up.sh --headless up --build      # whole stack
+#   scripts/drive_test.sh                    # same, plus a closed-loop drive check
 #
 # (--headless adds this file and sets CARLA_NO_RENDERING=true, which the bridge
 # command in compose.yaml reads at interpolation time.)
 #
 # For machines with no NVIDIA container runtime (CI, WSL2 without the toolkit).
-# Physics, LiDAR, IMU, GNSS and vehicle status all work; cameras are not
-# spawned (the bridge's no_rendering_mode), so camera-based perception and
-# traffic-light recognition are unavailable.
+# Physics, LiDAR, IMU, GNSS, vehicle status, localization, planning and control
+# all run. Cameras are not spawned (the bridge's no_rendering_mode), and Autoware
+# perception is off: perception-stub reports an empty world instead, so this
+# mode does not see other traffic.
 services:
   carla:
     deploy: !reset {}
     command: [bash, CarlaUnreal.sh, -nosound, -nullrhi]
+
+  autoware:
+    deploy: !reset {}
+    command:
+      - ros2
+      - launch
+      - autoware_launch
+      - e2e_simulator.launch.xml
+      - vehicle_model:=sample_vehicle
+      - sensor_model:=carla_sensor_kit
+      - simulator_type:=carla
+      - launch_simulator_interface:=false
+      - map_path:=/home/aw/autoware_data/maps/autoware_maps/${CARLA_WORLD}
+      - data_path:=/home/aw/autoware_data/ml_models
+      - perception:=false
+      - rviz:=false
+
+  perception-stub:
+    image: ${BRIDGE_IMAGE}
+    network_mode: host
+    depends_on:
+      bridge:
+        condition: service_healthy
+    environment:
+      HOST_UID: ${HOST_UID:-1000}
+      HOST_GID: ${HOST_GID:-1000}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+    command: [python3, /opt/carla-autoware-tools/autoware/perception_stub.py]

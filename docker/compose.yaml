@@ -80,14 +80,17 @@ services:
       - map_path:=/home/aw/autoware_data/maps/autoware_maps/${CARLA_WORLD}
       - vehicle_type:=${EGO_VEHICLE}
       - no_rendering_mode:=${CARLA_NO_RENDERING:-false}
+      - spawn_point:=${SPAWN_POINT:-None}
+    # A fresh client sees no actors until it has received a tick, hence wait_for_tick.
     healthcheck:
       test:
         - CMD-SHELL
         - >-
           python3 -c "import sys, carla;
           c = carla.Client('localhost', 2000); c.set_timeout(5.0);
+          w = c.get_world(); w.wait_for_tick(5.0);
           sys.exit(0 if any(a.attributes.get('role_name') == 'ego_vehicle'
-          for a in c.get_world().get_actors().filter('vehicle.*')) else 1)"
+          for a in w.get_actors().filter('vehicle.*')) else 1)"
       interval: 10s
       timeout: 10s
       retries: 30
@@ -118,7 +121,7 @@ services:
       - simulator_type:=carla
       - launch_simulator_interface:=false
       - map_path:=/home/aw/autoware_data/maps/autoware_maps/${CARLA_WORLD}
-      - data_path:=/home/aw/autoware_data
+      - data_path:=/home/aw/autoware_data/ml_models
 
   spectator:
     <<: *bridge-image

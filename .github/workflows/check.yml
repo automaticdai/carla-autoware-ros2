@@ -14,7 +14,7 @@ jobs:
         run: shellcheck -x scripts/*.sh docker/*.sh
 
       - name: Python tools compile
-        run: python3 -m py_compile tools/*.py
+        run: python3 -m py_compile tools/*.py tools/autoware/*.py
 
       - name: Launch and package XML are well-formed
         run: |
@@ -22,7 +22,7 @@ jobs:
             python3 -c "import sys, xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])" "$f"
           done
 
-      - name: Calibration maps are monotonic in pedal
+      - name: Calibration maps pass the converter's validation (strictly monotonic in pedal)
         run: |
           python3 - <<'PY'
           import csv
@@ -30,7 +30,7 @@ jobs:
               rows = list(csv.reader(open(f"ros/carla_autoware_ue5/calibration/{name}.csv")))[1:]
               vals = [[float(x) for x in r[1:]] for r in rows]
               for a, b in zip(vals, vals[1:]):
-                  assert all(sign * (y - x) >= 0 for x, y in zip(a, b)), f"{name} not monotonic"
+                  assert all(sign * (y - x) > 0 for x, y in zip(a, b)), f"{name} not strictly monotonic"
           print("ok")
           PY
 

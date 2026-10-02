@@ -17,8 +17,11 @@ running `carlasim/carla:0.10.0` server (null RHI, Town10HD_Opt) with the tools i
 | 8 | Towns re-authored in UE5 | 0.9 point clouds don't match, so NDT drifts and MRM stops the route | Maps from `AutowareFoundation/carla-ue5-maps` (recorded on 0.10), pinned revision, SHA-256 checked | Upstream `demo_artifacts` role documentation |
 | 9 | Only `Town10HD_Opt` (and Mine_01/Town15) ship with 0.10; no Town01 | The default `map_path` world doesn't exist | `CARLA_WORLD=Town10HD_Opt` | `carla-ue5-maps` currently publishes only `Town10HD_Opt` |
 | 10 | `WheelPhysicsControl.position` renamed to `location`, and it reads as zeros | Tools that derive wheelbase from physics break | `smoke_test.py` no longer derives the wheelbase; the bridge default of 2.85 m is the MKZ spec | Measured: all four wheel `location`/`offset` values are `(0, 0, 0)` |
+| 11 | (Autoware, not CARLA) `autoware_raw_vehicle_cmd_converter` rejects a pedal map unless every row is *strictly* above (accel) or below (brake) the previous one | One tie in a calibrated map crashes the converter (`Brake map is invalid`); no actuation reaches CARLA and the ego never moves | `calibrate_pedal_map.py` enforces a 0.01 m/s² margin; CI checks the same strict rule | Measured: the first calibrated brake map tied at 1.39 m/s, where the ego stops inside the measurement window |
 
 ## End-to-end check
+
+### Bridge only
 
 On 2026-10-02 the compose stack (`scripts/up.sh --headless up carla bridge`) was
 run on WSL2 with the host DDS settings from `scripts/host_setup.sh`:
@@ -32,7 +35,18 @@ run on WSL2 with the host DDS settings from `scripts/host_setup.sh`:
 - Without the host DDS settings every bridge node fails with
   `rmw_create_node: failed to create domain`; `scripts/up.sh` now refuses to start.
 
-The full Autoware stack (`autoware` service) has not been run on this machine.
+### Full closed loop
+
+`scripts/drive_test.sh` (headless; Autoware with `perception:=false` and
+`tools/autoware/perception_stub.py`) was run four times from a cold start on
+2026-10-02. Every run passed identically: localization initialized on the 0.10
+point cloud, the route was set 80 m ahead, the ego pulled away (3.1–3.3 m/s after
+5 s), cruised at about 4.3 m/s and stopped 0.5 m from the goal. That's ARRIVED
+after 26 s, with 79.5 m travelled and about 1 min 46 s for the whole script.
+
+The bridge health check must call `wait_for_tick()` before listing actors: a
+fresh client sees an empty actor list until it receives a tick, so without it the
+check fails at random.
 
 ## Open items
 

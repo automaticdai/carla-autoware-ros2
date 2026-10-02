@@ -38,6 +38,9 @@ RUN source /opt/autoware/setup.bash \
         --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
     && rm -rf build log
 
+# Client tools (smoke test, calibration, headless drive test) for use in-container.
+COPY tools /opt/carla-autoware-tools
+
 # Keep the base image's entrypoint (host UID mapping, Autoware environment) and
 # chain the overlay sourcing after it.
 COPY docker/bridge-entrypoint.sh /usr/local/bin/bridge-entrypoint.sh

@@ -88,12 +88,21 @@ def start_throttle(world, ego, start, dt, pedals, nudge, seconds=3.0, moving=0.5
     return None
 
 
-def monotonic(rows, increasing):
-    """Force each speed column to be monotonic in pedal; the converter inverts the map."""
+def monotonic(rows, increasing, margin=0.01):
+    """Make each speed column strictly monotonic in pedal.
+
+    autoware_raw_vehicle_cmd_converter rejects the whole map ("Accel/Brake map
+    is invalid") unless every row is strictly above (accel) or below (brake)
+    the previous one in every column. Ties come from noise, gear shifts, and
+    low-speed braking where the ego stops inside the measurement window.
+    """
     fixed, changed = [list(rows[0])], False
     for row in rows[1:]:
         prev = fixed[-1]
-        new = [max(a, b) if increasing else min(a, b) for a, b in zip(row, prev)]
+        if increasing:
+            new = [max(a, b + margin) for a, b in zip(row, prev)]
+        else:
+            new = [min(a, b - margin) for a, b in zip(row, prev)]
         changed |= new != list(row)
         fixed.append(new)
     return fixed, changed
@@ -141,7 +150,7 @@ def main() -> int:
     accel, a_fixed = monotonic(accel, increasing=True)
     brake, b_fixed = monotonic(brake, increasing=False)
     if a_fixed or b_fixed:
-        print("note: measurements were not monotonic in pedal; clamped (noise or gear shifts)")
+        print("note: measurements were not strictly monotonic in pedal; clamped (noise, gear shifts, low-speed stops)")
     write_map(os.path.join(args.out, "accel_map.csv"), ACCEL_PEDALS, accel)
     write_map(os.path.join(args.out, "brake_map.csv"), BRAKE_PEDALS, brake)
     fmt = lambda p: "never" if p is None else f"{p:.2f}"
