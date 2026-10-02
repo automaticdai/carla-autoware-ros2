@@ -18,6 +18,22 @@ running `carlasim/carla:0.10.0` server (null RHI, Town10HD_Opt) with the tools i
 | 9 | Only `Town10HD_Opt` (and Mine_01/Town15) ship with 0.10; no Town01 | The default `map_path` world doesn't exist | `CARLA_WORLD=Town10HD_Opt` | `carla-ue5-maps` currently publishes only `Town10HD_Opt` |
 | 10 | `WheelPhysicsControl.position` renamed to `location`, and it reads as zeros | Tools that derive wheelbase from physics break | `smoke_test.py` no longer derives the wheelbase; the bridge default of 2.85 m is the MKZ spec | Measured: all four wheel `location`/`offset` values are `(0, 0, 0)` |
 
+## End-to-end check
+
+On 2026-10-02 the compose stack (`scripts/up.sh --headless up carla bridge`) was
+run on WSL2 with the host DDS settings from `scripts/host_setup.sh`:
+
+- The bridge became healthy (ego spawned) about 70 s after start.
+- Rates: `/clock`, IMU, GNSS and `/vehicle/status/velocity_status` at 20 Hz;
+  `/sensing/lidar/top/pointcloud_before_sync` at 10 Hz. Camera topics are
+  advertised but silent, as expected without a renderer.
+- Publishing `/control/command/actuation_cmd` at throttle 0.4 took the ego from
+  0 to 3.0 m/s in 6 s; brake 0.8 stopped it.
+- Without the host DDS settings every bridge node fails with
+  `rmw_create_node: failed to create domain`; `scripts/up.sh` now refuses to start.
+
+The full Autoware stack (`autoware` service) has not been run on this machine.
+
 ## Open items
 
 - **Steering gain.** The physics reports a 70° front-wheel max steer, which is
