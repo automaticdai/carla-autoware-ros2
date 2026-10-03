@@ -1,0 +1,20 @@
+ok: GNSS pose and localization state (0 s)
+start x=-88.7 y=-24.4 yaw=-0.2 deg
+ok: localization initialized (0 s)
+ok: kinematic state (0 s)
+/api/routing/set_route_points: success=True ''
+ok: route set (0 s)
+ok: autonomous mode available (2 s)
+/api/operation_mode/change_to_autonomous: success=True ''
+t=   5 s  travelled   0.1 m  v= 0.3 m/s  remaining  79.9 m
+t=  10 s  travelled   2.6 m  v= 1.6 m/s  remaining  77.4 m
+t=  15 s  travelled   9.6 m  v= 3.5 m/s  remaining  70.4 m
+t=  20 s  travelled  21.1 m  v= 4.4 m/s  remaining  58.9 m
+t=  25 s  travelled  33.1 m  v= 4.4 m/s  remaining  46.9 m
+t=  30 s  travelled  45.4 m  v= 4.4 m/s  remaining  34.6 m
+t=  35 s  travelled  57.4 m  v= 4.3 m/s  remaining  22.6 m
+t=  40 s  travelled  69.2 m  v= 4.3 m/s  remaining  10.8 m
+t=  45 s  travelled  77.5 m  v= 1.9 m/s  remaining   2.5 m
+t=  51 s  travelled  78.5 m  v= 0.7 m/s  remaining   1.5 m
+t=  56 s  travelled  79.5 m  v= 0.3 m/s  remaining   0.5 m
+ARRIVED after 58 s, travelled 79.6 m

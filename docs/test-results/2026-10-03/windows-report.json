@@ -1,0 +1,121 @@
+{
+  "server": "Windows CARLA 0.9.16",
+  "client": "0.9.16 cp310",
+  "world": "Town10HD_Opt",
+  "vehicle": "vehicle.toyota.prius",
+  "map_revision": "062f94b5322e679ee0430e2daa6995dca9f7f0ea",
+  "ros_domain_id": 42,
+  "drive_result": "ARRIVED",
+  "distance_m": 79.6,
+  "wall_seconds": 58,
+  "goal_error_m_approx": 0.4,
+  "collisions": 0,
+  "peak_speed_mps": 4.4941599642924865,
+  "maximum_lane_center_error_m": 0.17578764886706535,
+  "final_speed_mps": 3.8151772401605316e-08,
+  "tf_checks": [
+    "map -> base_link",
+    "base_link -> tamagawa/imu_link",
+    "base_link -> velodyne_top"
+  ],
+  "topic_checks": {
+    "/clock": {
+      "messages": 94,
+      "wall_hz": 3.13
+    },
+    "/sensing/imu/tamagawa/imu_raw": {
+      "messages": 93,
+      "wall_hz": 3.09
+    },
+    "/sensing/gnss/pose_with_covariance": {
+      "messages": 93,
+      "wall_hz": 3.09
+    },
+    "/sensing/lidar/top/pointcloud_before_sync": {
+      "messages": 47,
+      "wall_hz": 1.56
+    },
+    "/localization/kinematic_state": {
+      "messages": 93,
+      "wall_hz": 3.09
+    },
+    "/planning/trajectory": {
+      "messages": 47,
+      "wall_hz": 1.54
+    },
+    "/control/command/control_cmd": {
+      "messages": 93,
+      "wall_hz": 3.09
+    },
+    "/control/command/actuation_cmd": {
+      "messages": 93,
+      "wall_hz": 3.09
+    },
+    "/vehicle/status/velocity_status": {
+      "messages": 92,
+      "wall_hz": 3.07
+    },
+    "/sensing/camera/CAM_FRONT/image_raw": {
+      "messages": 45,
+      "wall_hz": 1.53,
+      "width": 1600,
+      "height": 900,
+      "stddev": 49.4315048703393
+    },
+    "/sensing/camera/CAM_FRONT_LEFT/image_raw": {
+      "messages": 46,
+      "wall_hz": 1.52,
+      "width": 1600,
+      "height": 900,
+      "stddev": 50.26680565571007
+    },
+    "/sensing/camera/CAM_FRONT_RIGHT/image_raw": {
+      "messages": 46,
+      "wall_hz": 1.55,
+      "width": 1600,
+      "height": 900,
+      "stddev": 50.17036650499407
+    },
+    "/sensing/camera/CAM_BACK/image_raw": {
+      "messages": 46,
+      "wall_hz": 1.54,
+      "width": 1600,
+      "height": 900,
+      "stddev": 53.071621783541424
+    },
+    "/sensing/camera/CAM_BACK_LEFT/image_raw": {
+      "messages": 46,
+      "wall_hz": 1.56,
+      "width": 1600,
+      "height": 900,
+      "stddev": 53.913482001936664
+    },
+    "/sensing/camera/CAM_BACK_RIGHT/image_raw": {
+      "messages": 46,
+      "wall_hz": 1.55,
+      "width": 1600,
+      "height": 900,
+      "stddev": 54.554122573639326
+    },
+    "/sensing/camera/all_cameras/image_raw": {
+      "messages": 290,
+      "wall_hz": 9.67,
+      "width": 1440,
+      "height": 540,
+      "stddev": 54.0213541333321
+    },
+    "/sensing/camera/CAM_FRONT/image_raw/compressed": {
+      "messages": 46,
+      "wall_hz": 1.52
+    }
+  },
+  "limitations": [
+    "Perception models unavailable; empty-world perception stub used. Obstacle detection and traffic-light recognition untested.",
+    "First attempt blocked by parked camera-preview vehicle; removed before clean run.",
+    "Six-camera sampling ran at approximately 0.15x real time.",
+    "Windows 0.9.16 compatibility test; does not validate rendered CARLA 0.10."
+  ],
+  "test_date": "2026-10-03",
+  "topic_sample_phase": "30 wall-clock seconds after arrival",
+  "simulation_to_wall_time_ratio_during_topic_sample": 0.15405433569841034
+}

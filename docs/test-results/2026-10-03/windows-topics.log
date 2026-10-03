@@ -1,0 +1,19 @@
+/clock {'messages': 94, 'wall_hz': 3.13}
+/sensing/imu/tamagawa/imu_raw {'messages': 93, 'wall_hz': 3.09}
+/sensing/gnss/pose_with_covariance {'messages': 93, 'wall_hz': 3.09}
+/sensing/lidar/top/pointcloud_before_sync {'messages': 47, 'wall_hz': 1.56}
+/localization/kinematic_state {'messages': 93, 'wall_hz': 3.09}
+/planning/trajectory {'messages': 47, 'wall_hz': 1.54}
+/control/command/control_cmd {'messages': 93, 'wall_hz': 3.09}
+/control/command/actuation_cmd {'messages': 93, 'wall_hz': 3.09}
+/vehicle/status/velocity_status {'messages': 92, 'wall_hz': 3.07}
+/sensing/camera/CAM_FRONT/image_raw {'messages': 45, 'wall_hz': 1.53}
+/sensing/camera/CAM_FRONT_LEFT/image_raw {'messages': 46, 'wall_hz': 1.52}
+/sensing/camera/CAM_FRONT_RIGHT/image_raw {'messages': 46, 'wall_hz': 1.55}
+/sensing/camera/CAM_BACK/image_raw {'messages': 46, 'wall_hz': 1.54}
+/sensing/camera/CAM_BACK_LEFT/image_raw {'messages': 46, 'wall_hz': 1.56}
+/sensing/camera/CAM_BACK_RIGHT/image_raw {'messages': 46, 'wall_hz': 1.55}
+/sensing/camera/all_cameras/image_raw {'messages': 290, 'wall_hz': 9.67}
+/sensing/camera/CAM_FRONT/image_raw/compressed {'messages': 46, 'wall_hz': 1.52}
+simulation/wall ratio: 0.15405433569841034
+PASS all pipeline topics and rendered images

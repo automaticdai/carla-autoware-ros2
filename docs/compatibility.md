@@ -48,6 +48,71 @@ The bridge health check must call `wait_for_tick()` before listing actors: a
 fresh client sees an empty actor list until it receives a tick, so without it the
 check fails at random.
 
+### Repeat check on 2026-10-03
+
+The headless CARLA 0.10 drive test passed again: ARRIVED after 26 s, 79.5 m
+travelled, stopping about 0.5 m from the goal. Live sampling confirmed IMU,
+GNSS, localization, control, actuation and vehicle feedback at about 20 Hz,
+with LiDAR and planning at 10 Hz. The map-to-vehicle and vehicle-to-IMU TF
+connections passed. ShellCheck, Python compilation, launch XML, calibration
+monotonicity and both Compose configurations also passed.
+
+### Windows CARLA 0.9.16 with cameras
+
+On 2026-10-03, a separate compatibility test used the installed Windows CARLA
+0.9.16 server on an RTX 5080 and the ROS 2 Humble stack in WSL2. Installing
+NVIDIA Container Toolkit made the GPU visible to Docker, but the Linux CARLA
+0.10 container still exposed only the llvmpipe CPU Vulkan renderer and exited
+during rendered startup. The camera test therefore used native Windows CARLA.
+
+This test required a separate image with the **0.9.16 cp310 client**, upstream
+`autoware_carla_interface` launch defaults for `vehicle.toyota.prius` and its
+pedal maps, and CARLA 0.9 maps. The point cloud and lanelet map came from
+`carla-simulator/autoware-contents` at revision
+`062f94b5322e679ee0430e2daa6995dca9f7f0ea` (`Town10HD.pcd` and
+`Town10HD.osm`), placed in a `Town10HD_Opt` directory with the Local projector.
+The repository's CARLA 0.10 pins and presets were unchanged; the default
+Compose stack does not reproduce this Windows configuration.
+
+The bridge used all six cameras (`use_light_weight_sensor_mapping:=false`),
+ROS domain 42, and spawn point `-87.276062,24.441530,0.6,0,0,0.2`.
+Autoware ran with `launch_simulator_interface:=false`, `perception:=false`
+and `rviz:=false`, alongside the empty-world perception stub. The existing
+`tools/autoware/drive_test.py --distance 80 --timeout 180` exercised the AD API.
+
+- The clean run reached ARRIVED after **58 wall-clock seconds**, travelling
+  **79.6 m** and stopping about **0.4 m** from the goal.
+- A CARLA collision sensor reported **zero collisions** during the clean run.
+  Sampled simulator ground truth showed a peak speed of **4.49 m/s**, maximum
+  lane-center distance of **0.176 m**, and effectively zero final speed.
+- All six **1600×900** camera feeds, the combined image and front compressed
+  image published. Saved raw-camera images were nonblank; the combined view
+  was also inspected visually.
+- LiDAR, IMU, GNSS, localization, trajectory, control, actuation and vehicle
+  feedback all published. TF checks passed for `map` → `base_link`,
+  `base_link` → `tamagawa/imu_link` and `base_link` → `velodyne_top`.
+- During a separate 30-second sample after arrival, the simulator ran at about
+  **0.15× real time**: cameras, LiDAR and planning were about **1.5 Hz wall
+  time**, with clock, IMU, GNSS and control about **3.1 Hz**. The combined-image
+  publisher ran at about 9.7 Hz; that does not imply fresh camera frames at
+  that rate. These measurements are not a real-time performance pass.
+
+The first attempt was obstructed by the parked vehicle created for the earlier
+camera preview. It stopped moving after about 18 m while throttle remained
+commanded. That attempt was interrupted, the preview vehicle and orphaned test
+sensors were removed, and the clean run above was performed. This demonstrates
+why the empty-world stub requires an obstacle-free test scene.
+
+**Scope:** this validates rendered sensor transport and a straight-line
+localization/planning/control loop on **0.9.16**. Learned obstacle detection,
+traffic-light recognition, driving among traffic, curved-route tracking and
+rendering on **0.10** remain unvalidated. Perception model files were absent.
+
+Committed evidence: [report](test-results/2026-10-03/windows-report.json),
+[clean drive log](test-results/2026-10-03/windows-drive.log),
+[topic sample](test-results/2026-10-03/windows-topics.log) and
+[six-camera view](test-results/2026-10-03/windows-cameras.jpg).
+
 ## Open items
 
 - **Steering gain.** The physics reports a 70° front-wheel max steer, which is
@@ -55,7 +120,8 @@ check fails at random.
   measured a 2–3 m radius, but those runs were disturbed by roadside geometry. If
   lateral tracking oscillates, measure on an open area and set
   `max_wheel_steer_angle_deg`.
-- **Rendering.** Everything here was measured with `-nullrhi`, so camera sensors
-  and camera-based perception on 0.10 are untested in this repository.
+- **Rendering.** CARLA 0.10 remains tested only with `-nullrhi`; its camera
+  sensors and camera-based perception are untested. The Windows 0.9.16 camera
+  test above does not establish 0.10 rendering compatibility.
 - **Sleeping bodies.** `sleep_threshold` is exposed in `VehiclePhysicsControl`.
   Setting it to 0 could replace the wake nudge in the bridge, but that is untested.
